@@ -1,16 +1,20 @@
 {
   "name": "todoapp.jsx",
+  "homepage": "https://beau-1.github.io/ToDoApp/dist/",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:ghpages": "vite build --base=https://Beau-1.github.io/ToDoApp/dist/",
+    "build:ghpages": "vite build --base=https://beau-1.github.io/ToDoApp/dist/",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "gh-pages": "^6.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
