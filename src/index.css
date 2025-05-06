@@ -19,7 +19,7 @@ h1 {
     padding: 0 12px;
     display: inline-block;
     border-radius: 6px;
-    margin-bottom: 25px;
+    margin-bottom: 5px;
 }
 .input-container {
     margin-bottom: 25px;
@@ -77,5 +77,6 @@ input[type="text"] {
 .version {
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     font-size: xx-small;
-    margin-bottom: 25px;
+    margin-bottom: 50px;
+    text-align: right;
 }

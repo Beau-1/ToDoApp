@@ -53,9 +53,7 @@ function ToDoList() {
     return (
         <div className="to-do-list">
             <h1>To Do</h1>
-            <div id="versionId" className="version">
-                Ver. 2.1
-            </div>
+            <div className="version">Ver. 2.1</div>
             <form onSubmit={addTask} className="input-container">
                 <input
                     type="text"
