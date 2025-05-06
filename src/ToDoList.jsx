@@ -39,7 +39,7 @@ function ToDoList() {
         }
     }
     return (
-        <div className="to-do-list">
+        <div className="to-do-list ">
             <h1>To Do</h1>
             <form onSubmit={addTask} className="input-container">
                 <input
@@ -50,11 +50,10 @@ function ToDoList() {
                 />
                 <button className="add-button">Add</button>
             </form>
-            <ol>
+            <div className="list">
                 {tasks.map((task, index) => (
-                    <li key={index}>
+                    <div className="list-item" key={index}>
                         <span className="text">{task}</span>
-
                         <button
                             className="move-button"
                             onClick={() => moveTaskUp(index)}>
@@ -70,9 +69,10 @@ function ToDoList() {
                             onClick={() => deleteTask(index)}>
                             ❌
                         </button>
-                    </li>
+                    </div>
                 ))}
-            </ol>
+            </div>
+            <div>Ver. 2</div>
         </div>
     );
 }

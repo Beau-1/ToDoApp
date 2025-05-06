@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     background-color: black;
     color: rgb(249, 239, 227);
@@ -6,7 +10,8 @@ body {
 .to-do-list {
     font-family: Helvetica, sans-serif;
     text-align: center;
-    margin-top: 100px;
+    margin-top: 70px;
+    margin-bottom: 70px;
 }
 h1 {
     font-size: 4rem;
@@ -16,8 +21,7 @@ h1 {
     border-radius: 6px;
 }
 .input-container {
-    justify-content: center;
-    gap: 10px;
+    margin-bottom: 25px;
 }
 .add-button {
     margin-left: 6px;
@@ -42,20 +46,25 @@ input[type="text"] {
     border: none;
     border-radius: 5px;
 }
-ol {
-    padding: 0;
+.list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 }
-li {
+.list-item {
     font-size: 2rem;
     font-weight: bold;
     padding: 15px;
-    margin-bottom: 10px;
     border: 3px solid;
     border-radius: 5px;
     display: flex;
-    align-items: center;
+    max-width: 570px;
+    width: 100%;
 }
 .text {
+    max-width: 100%;
+    word-break: break-word;
     flex: 1;
 }
 .delete-button,
