@@ -1,23 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 function ToDoList() {
-    const [tasks, setTasks] = useState([]);
+    const [tasks, setTasks] = useState(() => {
+        const savedTasks = localStorage.getItem("tasks");
+        return savedTasks ? JSON.parse(savedTasks) : [];
+    });
     const [newTask, setNewTask] = useState("");
+
+    useEffect(() => {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+    }, [tasks]);
+
     function handleInputChange(event) {
         setNewTask(event.target.value);
     }
+
     function addTask(event) {
         event.preventDefault();
-
         if (newTask.trim() !== "") {
             setTasks((t) => [...t, newTask]);
             setNewTask("");
         }
     }
+
     function deleteTask(index) {
         const updatedTasks = tasks.filter((_, i) => i !== index);
         setTasks(updatedTasks);
     }
+
     function moveTaskUp(index) {
         if (index > 0) {
             const updatedTasks = [...tasks];
@@ -28,6 +38,7 @@ function ToDoList() {
             setTasks(updatedTasks);
         }
     }
+
     function moveTaskDown(index) {
         if (index < tasks.length - 1) {
             const updatedTasks = [...tasks];
@@ -38,11 +49,12 @@ function ToDoList() {
             setTasks(updatedTasks);
         }
     }
+
     return (
-        <div className="to-do-list ">
+        <div className="to-do-list">
             <h1>To Do</h1>
             <div id="versionId" className="version">
-                Ver. 2.0
+                Ver. 2.1
             </div>
             <form onSubmit={addTask} className="input-container">
                 <input
@@ -78,4 +90,5 @@ function ToDoList() {
         </div>
     );
 }
+
 export default ToDoList;
