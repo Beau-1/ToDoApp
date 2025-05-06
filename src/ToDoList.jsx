@@ -41,6 +41,9 @@ function ToDoList() {
     return (
         <div className="to-do-list ">
             <h1>To Do</h1>
+            <div id="versionId" className="version">
+                Ver. 2.0
+            </div>
             <form onSubmit={addTask} className="input-container">
                 <input
                     type="text"
@@ -72,7 +75,6 @@ function ToDoList() {
                     </div>
                 ))}
             </div>
-            <div>Ver. 2</div>
         </div>
     );
 }
