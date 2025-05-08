@@ -11,21 +11,23 @@ import "./App.css";
 import ToDoList from "./ToDoList";
 import Login from "./Login";
 
+// Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyBBOzhxKc122mUd_wz_KzGPI5i3x7x4LKE",
-    authDomain: "to-do-app-5a99d.firebaseapp.com",
-    projectId: "to-do-app-5a99d",
-    storageBucket: "to-do-app-5a99d.appspot.com",
-    messagingSenderId: "765432115175",
-    appId: "1:765432115175:web:81f091f0ed8972ff411742",
-    measurementId: "G-2PCEMQQ40Q",
+    apiKey: process.env.API_KEY || "AIzaSyBBOzhxKc122mUd_wz_KzGPI5i3x7x4LKE",
+    authDomain: process.env.AUTH_DOMAIN || "to-do-app-5a99d.firebaseapp.com",
+    projectId: process.env.PROJECT_ID || "to-do-app-5a99d",
+    storageBucket: process.env.STORAGE_BUCKET || "to-do-app-5a99d.appspot.com",
+    messagingSenderId: process.env.MESSAGING_SENDER_ID || "765432115175",
+    appId: process.env.APP_ID || "1:765432115175:web:81f091f0ed8972ff411742",
+    measurementId: process.env.MEASUREMENT_ID || "G-2PCEMQQ40Q",
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-function App() {
+export default function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -37,7 +39,9 @@ function App() {
         return unsubscribe;
     }, []);
 
-    if (loading) return <div className="loading">Loading...</div>;
+    if (loading) {
+        return <div className="loading">Loading...</div>;
+    }
 
     return (
         <div className="app">
@@ -66,5 +70,3 @@ function App() {
         </div>
     );
 }
-
-export default App;
