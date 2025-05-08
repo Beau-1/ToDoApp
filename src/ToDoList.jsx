@@ -5,6 +5,7 @@ import {
     getDocs,
     deleteDoc,
     doc,
+    updateDoc,
 } from "firebase/firestore";
 
 function ToDoList({ db }) {
@@ -13,30 +14,45 @@ function ToDoList({ db }) {
         return savedTasks ? JSON.parse(savedTasks) : [];
     });
     const [newTask, setNewTask] = useState("");
-    const [firestoreIds, setFirestoreIds] = useState({}); // Stores Firestore document IDs
+    const [firestoreData, setFirestoreData] = useState({}); // { taskName: { id, order } }
 
-    // Load tasks from Firestore on component mount
+    // Load and sync tasks from Firestore and localStorage
     useEffect(() => {
-        const fetchTasks = async () => {
-            const querySnapshot = await getDocs(collection(db, "lists"));
-            const firestoreTasks = [];
-            const ids = {};
+        const loadTasks = async () => {
+            try {
+                const querySnapshot = await getDocs(collection(db, "lists"));
+                const firestoreTasks = {};
+                const localTasks =
+                    JSON.parse(localStorage.getItem("tasks")) || [];
 
-            querySnapshot.forEach((doc) => {
-                firestoreTasks.push(doc.data().name);
-                ids[doc.data().name] = doc.id; // Store doc id by task name
-            });
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    firestoreData[data.name] = {
+                        id: doc.id,
+                        order: data.order,
+                    };
+                });
 
-            // Merge with local storage tasks, avoiding duplicates
-            const localTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-            const mergedTasks = [
-                ...new Set([...localTasks, ...firestoreTasks]),
-            ];
+                // Merge tasks prioritizing Firestore order
+                const mergedTasks = Object.entries(firestoreData)
+                    .sort((a, b) => a[1].order - b[1].order)
+                    .map(([name]) => name);
 
-            setTasks(mergedTasks);
-            setFirestoreIds(ids);
+                // Add any local tasks not in Firestore
+                localTasks.forEach((task) => {
+                    if (!firestoreData[task]) {
+                        mergedTasks.push(task);
+                    }
+                });
+
+                setTasks(mergedTasks);
+                setFirestoreData(firestoreData);
+            } catch (error) {
+                console.error("Error loading tasks:", error);
+            }
         };
-        fetchTasks();
+
+        loadTasks();
     }, [db]);
 
     // Update localStorage whenever tasks change
@@ -50,77 +66,103 @@ function ToDoList({ db }) {
 
     const addTask = async (event) => {
         event.preventDefault();
-        if (newTask.trim() !== "") {
-            try {
-                // Add to Firestore
-                const docRef = await addDoc(collection(db, "lists"), {
-                    name: newTask,
-                    createdAt: new Date(),
-                });
+        const taskName = newTask.trim();
+        if (taskName === "") return;
 
-                // Update Firestore IDs
-                setFirestoreIds((prev) => ({
-                    ...prev,
-                    [newTask]: docRef.id,
-                }));
+        try {
+            // Add to Firestore with order
+            const docRef = await addDoc(collection(db, "lists"), {
+                name: taskName,
+                order: tasks.length, // New items get highest order
+                createdAt: new Date(),
+            });
 
-                // Update local state
-                setTasks([...tasks, newTask]);
-                setNewTask("");
-            } catch (e) {
-                console.error("Error adding document: ", e);
-            }
+            // Update state
+            setFirestoreData((prev) => ({
+                ...prev,
+                [taskName]: {
+                    id: docRef.id,
+                    order: tasks.length,
+                },
+            }));
+            setTasks([...tasks, taskName]);
+            setNewTask("");
+        } catch (error) {
+            console.error("Error adding task:", error);
         }
     };
 
     const deleteTask = async (index) => {
-        const taskToDelete = tasks[index];
+        const taskName = tasks[index];
 
         try {
             // Delete from Firestore if exists
-            if (firestoreIds[taskToDelete]) {
-                await deleteDoc(doc(db, "lists", firestoreIds[taskToDelete]));
+            if (firestoreData[taskName]?.id) {
+                await deleteDoc(doc(db, "lists", firestoreData[taskName].id));
             }
 
-            // Update local state
-            const updatedTasks = tasks.filter((_, i) => i !== index);
-            setTasks(updatedTasks);
+            // Update state
+            const newFirestoreData = { ...firestoreData };
+            delete newFirestoreData[taskName];
+            setFirestoreData(newFirestoreData);
 
-            // Update Firestore IDs
-            const newIds = { ...firestoreIds };
-            delete newIds[taskToDelete];
-            setFirestoreIds(newIds);
-        } catch (e) {
-            console.error("Error deleting document: ", e);
+            setTasks(tasks.filter((_, i) => i !== index));
+        } catch (error) {
+            console.error("Error deleting task:", error);
         }
     };
 
-    const moveTaskUp = (index) => {
-        if (index > 0) {
-            const updatedTasks = [...tasks];
-            [updatedTasks[index], updatedTasks[index - 1]] = [
-                updatedTasks[index - 1],
-                updatedTasks[index],
-            ];
-            setTasks(updatedTasks);
+    const moveTask = async (index, direction) => {
+        const newIndex = direction === "up" ? index - 1 : index + 1;
+        if (newIndex < 0 || newIndex >= tasks.length) return;
+
+        const updatedTasks = [...tasks];
+        const task1 = updatedTasks[index];
+        const task2 = updatedTasks[newIndex];
+
+        // Swap tasks
+        updatedTasks[index] = task2;
+        updatedTasks[newIndex] = task1;
+        setTasks(updatedTasks);
+
+        // Update Firestore order if both tasks exist there
+        try {
+            if (firestoreData[task1] && firestoreData[task2]) {
+                const batchUpdates = [
+                    updateDoc(doc(db, "lists", firestoreData[task1].id), {
+                        order: firestoreData[task2].order,
+                    }),
+                    updateDoc(doc(db, "lists", firestoreData[task2].id), {
+                        order: firestoreData[task1].order,
+                    }),
+                ];
+                await Promise.all(batchUpdates);
+
+                // Update local firestoreData
+                setFirestoreData((prev) => ({
+                    ...prev,
+                    [task1]: {
+                        ...prev[task1],
+                        order: prev[task2].order,
+                    },
+                    [task2]: {
+                        ...prev[task2],
+                        order: prev[task1].order,
+                    },
+                }));
+            }
+        } catch (error) {
+            console.error("Error updating task order:", error);
         }
     };
 
-    const moveTaskDown = (index) => {
-        if (index < tasks.length - 1) {
-            const updatedTasks = [...tasks];
-            [updatedTasks[index], updatedTasks[index + 1]] = [
-                updatedTasks[index + 1],
-                updatedTasks[index],
-            ];
-            setTasks(updatedTasks);
-        }
-    };
+    const moveTaskUp = (index) => moveTask(index, "up");
+    const moveTaskDown = (index) => moveTask(index, "down");
 
     return (
         <div className="to-do-list">
             <h1>To Do</h1>
-            <div className="version">Ver. 2.3</div>
+            <div className="version">Ver. 2.4</div>
             <form onSubmit={addTask} className="input-container">
                 <input
                     type="text"
