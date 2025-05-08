@@ -8,6 +8,51 @@ import {
     GoogleAuthProvider,
     signOut,
 } from "firebase/auth";
+import Login from "./Login";
+
+function App() {
+    const [user, setUser] = useState(null);
+    const [showLogin, setShowLogin] = useState(true);
+
+    useEffect(() => {
+        const unsubscribe = getAuth().onAuthStateChanged((user) => {
+            setUser(user);
+            if (user) setShowLogin(false);
+        });
+        return unsubscribe;
+    }, []);
+
+    const handleSuccessfulLogin = () => {
+        setShowLogin(false);
+    };
+
+    const handleSignOut = () => {
+        getAuth().signOut();
+        setShowLogin(true);
+    };
+
+    return (
+        <div className="app">
+            {user ? (
+                <>
+                    <div className="user-info">
+                        <img
+                            src={user.photoURL}
+                            alt="Profile"
+                            className="profile-pic"
+                            referrerPolicy="no-referrer"
+                        />
+                        <span>{user.displayName}</span>
+                        <button onClick={handleSignOut}>Sign Out</button>
+                    </div>
+                    <ToDoList db={db} userId={user.uid} />
+                </>
+            ) : showLogin ? (
+                <Login onLogin={handleSuccessfulLogin} />
+            ) : null}
+        </div>
+    );
+}
 
 // Add to your Firebase config:
 const auth = getAuth(app);
@@ -90,21 +135,3 @@ function App() {
 
 // Export the App component as default
 export default App;
-
-//  Google authentication with Firebase
-// document.addEventListener("DOMContentLoaded", (Event) => {
-//     const app = firebase.app();
-// });
-
-// function googleLogin() {
-//     const provider = new firebase.auth.GoogleAuthProvider();
-//     firebase
-//         .auth()
-//         .signInWithPopup(provider)
-//         .then((result) => {
-//             const user = result.user;
-//             document.write(`Hello ${user.displayName}`);
-//             console.log(user);
-//         })
-//         .catch(console.log);
-// }

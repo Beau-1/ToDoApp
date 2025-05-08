@@ -1,0 +1,80 @@
+/* Login.css - Matches ToDo App styling */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f8f9fa; /* Light gray background */
+}
+
+.login-box {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 320px;
+    border: 1px solid #e0e0e0;
+}
+
+.login-box h1 {
+    color: #2c3e50; /* Dark blue-gray matching your h1 in ToDoList */
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+}
+
+.login-box p {
+    color: #7f8c8d; /* Gray text */
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.google-signin-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: #4285f4; /* Google blue */
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease;
+}
+
+.google-signin-btn:hover {
+    background-color: #3367d6; /* Darker blue on hover */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.google-signin-btn img {
+    width: 18px;
+    height: 18px;
+    background: white;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+/* Loading spinner (optional) */
+.loading-spinner {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 3px solid white;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

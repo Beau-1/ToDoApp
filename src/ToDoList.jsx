@@ -171,7 +171,7 @@ function ToDoList({ db, userId }) {
     return (
         <div className="to-do-list">
             <h1>To Do</h1>
-            <div className="version">Ver. 2.6</div>
+            <div className="version">Ver. 2.7</div>
             <form onSubmit={addTask} className="input-container">
                 <input
                     type="text"
