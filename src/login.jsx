@@ -1,12 +1,11 @@
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import "./Login.css"; // You'll create this for styling
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import "./Login.css";
 
-function Login({ onLogin }) {
+function Login({ auth }) {
     const signInWithGoogle = async () => {
         const provider = new GoogleAuthProvider();
         try {
-            await signInWithPopup(getAuth(), provider);
-            onLogin();
+            await signInWithPopup(auth, provider);
         } catch (error) {
             console.error("Error signing in:", error);
         }
@@ -15,11 +14,9 @@ function Login({ onLogin }) {
     return (
         <div className="login-container">
             <div className="login-box">
-                <h1>Welcome to ToDo App</h1>
-                <p>Please sign in to access your tasks</p>
-                <button
-                    className="google-signin-btn"
-                    onClick={signInWithGoogle}>
+                <h1>To Do App</h1>
+                <p>Sign in to continue</p>
+                <button onClick={signInWithGoogle} className="google-btn">
                     <img
                         src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
                         alt="Google logo"

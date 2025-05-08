@@ -1,137 +1,66 @@
-// Imports required functions from Firebase SDK
+import { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
-import { getFirestore, getDocs, collection, addDoc } from "firebase/firestore";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 import {
     getAuth,
     signInWithPopup,
     GoogleAuthProvider,
     signOut,
 } from "firebase/auth";
+import "./App.css";
+import ToDoList from "./ToDoList";
 import Login from "./Login";
 
-function App() {
-    const [user, setUser] = useState(null);
-    const [showLogin, setShowLogin] = useState(true);
+const firebaseConfig = {
+    apiKey: "AIzaSyBBOzhxKc122mUd_wz_KzGPI5i3x7x4LKE",
+    authDomain: "to-do-app-5a99d.firebaseapp.com",
+    projectId: "to-do-app-5a99d",
+    storageBucket: "to-do-app-5a99d.firebasestorage.app",
+    messagingSenderId: "765432115175",
+    appId: "1:765432115175:web:81f091f0ed8972ff411742",
+    measurementId: "G-2PCEMQQ40Q",
+};
 
-    useEffect(() => {
-        const unsubscribe = getAuth().onAuthStateChanged((user) => {
-            setUser(user);
-            if (user) setShowLogin(false);
-        });
-        return unsubscribe;
-    }, []);
-
-    const handleSuccessfulLogin = () => {
-        setShowLogin(false);
-    };
-
-    const handleSignOut = () => {
-        getAuth().signOut();
-        setShowLogin(true);
-    };
-
-    return (
-        <div className="app">
-            {user ? (
-                <>
-                    <div className="user-info">
-                        <img
-                            src={user.photoURL}
-                            alt="Profile"
-                            className="profile-pic"
-                            referrerPolicy="no-referrer"
-                        />
-                        <span>{user.displayName}</span>
-                        <button onClick={handleSignOut}>Sign Out</button>
-                    </div>
-                    <ToDoList db={db} userId={user.uid} />
-                </>
-            ) : showLogin ? (
-                <Login onLogin={handleSuccessfulLogin} />
-            ) : null}
-        </div>
-    );
-}
-
-// Add to your Firebase config:
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 const auth = getAuth(app);
 
 function App() {
     const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
             setUser(user);
+            setLoading(false);
         });
         return unsubscribe;
     }, []);
 
-    const signInWithGoogle = async () => {
-        const provider = new GoogleAuthProvider();
-        try {
-            await signInWithPopup(auth, provider);
-        } catch (error) {
-            console.error("Error signing in:", error);
-        }
-    };
-
-    const handleSignOut = () => {
-        signOut(auth);
-    };
+    if (loading) return <div className="loading">Loading...</div>;
 
     return (
         <div className="app">
             {user ? (
                 <>
-                    <div className="user-info">
-                        <img
-                            src={user.photoURL}
-                            alt="Profile"
-                            className="profile-pic"
-                        />
-                        <button onClick={handleSignOut}>Sign Out</button>
+                    <div className="user-header">
+                        <div className="user-info">
+                            <img src={user.photoURL} alt="Profile" />
+                            <span>{user.displayName}</span>
+                        </div>
+                        <button
+                            onClick={() => signOut(auth)}
+                            className="sign-out-btn">
+                            Sign Out
+                        </button>
                     </div>
                     <ToDoList db={db} userId={user.uid} />
                 </>
             ) : (
-                <button onClick={signInWithGoogle}>Sign in with Google</button>
+                <Login auth={auth} />
             )}
         </div>
     );
 }
 
-// Imports CSS styles
-import "./App.css";
-
-// Imports the ToDoList component
-import ToDoList from "./ToDoList";
-
-// Firebase configuration object with credentials and project identifiers
-const firebaseConfig = {
-    apiKey: process.env.API_KEY,
-    authDomain: process.env.AUTH_DOMAIN,
-    projectId: process.env.PROJECT_ID,
-    storageBucket: process.env.STORAGE_BUCKET,
-    messagingSenderId: process.env.MESSAGING_SENDER_ID,
-    appId: process.env.APP_ID,
-    measurementId: process.env.MEASUREMENT_ID,
-};
-
-// Initialize the Firebase application using the config object
-const app = initializeApp(firebaseConfig);
-
-// Initialize Firestore database and get a reference to use it
-const db = getFirestore(app);
-
-// Main React component
-function App() {
-    return (
-        <>
-            <ToDoList db={db} />
-        </>
-    );
-}
-
-// Export the App component as default
 export default App;

@@ -6,203 +6,89 @@ import {
     deleteDoc,
     doc,
     updateDoc,
+    query,
+    where,
 } from "firebase/firestore";
 
 function ToDoList({ db, userId }) {
-    const [tasks, setTasks] = useState(() => {
-        const savedTasks = localStorage.getItem("tasks");
-        return savedTasks ? JSON.parse(savedTasks) : [];
-    });
+    const [tasks, setTasks] = useState([]);
     const [newTask, setNewTask] = useState("");
-    const [firestoreData, setFirestoreData] = useState({}); // { taskName: { id, order } }
+    const [loading, setLoading] = useState(true);
 
-    // Load and sync tasks from Firestore and localStorage
     useEffect(() => {
-        const loadTasks = async () => {
+        const fetchTasks = async () => {
             try {
-                const querySnapshot = await getDocs(
-                    query(
-                        collection(db, "lists"),
-                        where("userId", "==", userId)
-                    )
+                const q = query(
+                    collection(db, "lists"),
+                    where("userId", "==", userId)
                 );
-
-                const firestoreTasks = {};
-                const localTasks =
-                    JSON.parse(localStorage.getItem("tasks")) || [];
+                const querySnapshot = await getDocs(q);
+                const fetchedTasks = [];
 
                 querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    firestoreData[data.name] = {
+                    fetchedTasks.push({
                         id: doc.id,
-                        order: data.order,
-                    };
+                        name: doc.data().name,
+                    });
                 });
 
-                // Merge tasks prioritizing Firestore order
-                const mergedTasks = Object.entries(firestoreData)
-                    .sort((a, b) => a[1].order - b[1].order)
-                    .map(([name]) => name);
-
-                // Add any local tasks not in Firestore
-                localTasks.forEach((task) => {
-                    if (!firestoreData[task]) {
-                        mergedTasks.push(task);
-                    }
-                });
-
-                setTasks(mergedTasks);
-                setFirestoreData(firestoreData);
+                setTasks(fetchedTasks);
             } catch (error) {
                 console.error("Error loading tasks:", error);
+            } finally {
+                setLoading(false);
             }
         };
 
-        loadTasks();
-    }, [db]);
+        if (userId) {
+            fetchTasks();
+        }
+    }, [db, userId]);
 
-    // Update localStorage whenever tasks change
-    useEffect(() => {
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-    }, [tasks]);
-
-    const handleInputChange = (event) => {
-        setNewTask(event.target.value);
-    };
-
-    const addTask = async (event) => {
-        event.preventDefault();
-        const taskName = newTask.trim();
-        if (taskName === "") return;
+    const addTask = async (e) => {
+        e.preventDefault();
+        if (!newTask.trim()) return;
 
         try {
-            // Add to Firestore with order
             const docRef = await addDoc(collection(db, "lists"), {
-                name: taskName,
-                order: tasks.length,
+                name: newTask,
+                userId: userId,
                 createdAt: new Date(),
-                userId: userId, // Add this line
             });
 
-            // Update state
-            setFirestoreData((prev) => ({
-                ...prev,
-                [taskName]: {
-                    id: docRef.id,
-                    order: tasks.length,
-                },
-            }));
-            setTasks([...tasks, taskName]);
+            setTasks([...tasks, { id: docRef.id, name: newTask }]);
             setNewTask("");
         } catch (error) {
             console.error("Error adding task:", error);
         }
     };
 
-    const deleteTask = async (index) => {
-        const taskName = tasks[index];
-
+    const deleteTask = async (taskId) => {
         try {
-            // Delete from Firestore if exists
-            if (firestoreData[taskName]?.id) {
-                await deleteDoc(doc(db, "lists", firestoreData[taskName].id));
-            }
-
-            // Update state
-            const newFirestoreData = { ...firestoreData };
-            delete newFirestoreData[taskName];
-            setFirestoreData(newFirestoreData);
-
-            setTasks(tasks.filter((_, i) => i !== index));
+            await deleteDoc(doc(db, "lists", taskId));
+            setTasks(tasks.filter((task) => task.id !== taskId));
         } catch (error) {
             console.error("Error deleting task:", error);
         }
     };
 
-    const moveTask = async (index, direction) => {
-        const newIndex = direction === "up" ? index - 1 : index + 1;
-        if (newIndex < 0 || newIndex >= tasks.length) return;
+    // ... (keep your existing moveTaskUp/Down functions)
 
-        const updatedTasks = [...tasks];
-        const task1 = updatedTasks[index];
-        const task2 = updatedTasks[newIndex];
-
-        // Swap tasks
-        updatedTasks[index] = task2;
-        updatedTasks[newIndex] = task1;
-        setTasks(updatedTasks);
-
-        // Update Firestore order if both tasks exist there
-        try {
-            if (firestoreData[task1] && firestoreData[task2]) {
-                const batchUpdates = [
-                    updateDoc(doc(db, "lists", firestoreData[task1].id), {
-                        order: firestoreData[task2].order,
-                        userId: userId, // Add this to maintain consistency
-                    }),
-                    updateDoc(doc(db, "lists", firestoreData[task2].id), {
-                        order: firestoreData[task1].order,
-                        userId: userId, // Add this to maintain consistency
-                    }),
-                ];
-                await Promise.all(batchUpdates);
-
-                // Update local firestoreData
-                setFirestoreData((prev) => ({
-                    ...prev,
-                    [task1]: {
-                        ...prev[task1],
-                        order: prev[task2].order,
-                    },
-                    [task2]: {
-                        ...prev[task2],
-                        order: prev[task1].order,
-                    },
-                }));
-            }
-        } catch (error) {
-            console.error("Error updating task order:", error);
-        }
-    };
-
-    const moveTaskUp = (index) => moveTask(index, "up");
-    const moveTaskDown = (index) => moveTask(index, "down");
+    if (loading) return <div className="loading">Loading tasks...</div>;
 
     return (
         <div className="to-do-list">
-            <h1>To Do</h1>
-            <div className="version">Ver. 2.7</div>
-            <form onSubmit={addTask} className="input-container">
-                <input
-                    type="text"
-                    placeholder="Enter a task"
-                    value={newTask}
-                    onChange={handleInputChange}
-                />
-                <button className="add-button">Add</button>
-            </form>
-            <div className="list">
-                {tasks.map((task, index) => (
-                    <div className="list-item" key={index}>
-                        <span className="text">{task}</span>
-                        <button
-                            className="move-button"
-                            onClick={() => moveTaskUp(index)}>
-                            🔼
-                        </button>
-                        <button
-                            className="move-button"
-                            onClick={() => moveTaskDown(index)}>
-                            🔽
-                        </button>
-                        <button
-                            className="delete-button"
-                            onClick={() => deleteTask(index)}>
-                            ❌
-                        </button>
-                    </div>
-                ))}
-            </div>
+            {/* Keep your existing JSX, but update the delete handler: */}
+            {tasks.map((task, index) => (
+                <div className="list-item" key={task.id}>
+                    {/* ... other elements ... */}
+                    <button
+                        className="delete-button"
+                        onClick={() => deleteTask(task.id)}>
+                        ❌
+                    </button>
+                </div>
+            ))}
         </div>
     );
 }
