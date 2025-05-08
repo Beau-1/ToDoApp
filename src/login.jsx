@@ -1,7 +1,7 @@
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import "./Login.css";
 
-function Login({ auth }) {
+export default function Login({ auth }) {
     const signInWithGoogle = async () => {
         const provider = new GoogleAuthProvider();
         try {
@@ -27,5 +27,3 @@ function Login({ auth }) {
         </div>
     );
 }
-
-export default Login;
