@@ -15,7 +15,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyBBOzhxKc122mUd_wz_KzGPI5i3x7x4LKE",
     authDomain: "to-do-app-5a99d.firebaseapp.com",
     projectId: "to-do-app-5a99d",
-    storageBucket: "to-do-app-5a99d.firebasestorage.app",
+    storageBucket: "to-do-app-5a99d.appspot.com",
     messagingSenderId: "765432115175",
     appId: "1:765432115175:web:81f091f0ed8972ff411742",
     measurementId: "G-2PCEMQQ40Q",
@@ -45,7 +45,11 @@ function App() {
                 <>
                     <div className="user-header">
                         <div className="user-info">
-                            <img src={user.photoURL} alt="Profile" />
+                            <img
+                                src={user.photoURL}
+                                alt="Profile"
+                                referrerPolicy="no-referrer"
+                            />
                             <span>{user.displayName}</span>
                         </div>
                         <button
