@@ -1,6 +1,60 @@
 // Imports required functions from Firebase SDK
 import { initializeApp } from "firebase/app";
 import { getFirestore, getDocs, collection, addDoc } from "firebase/firestore";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import {
+    getAuth,
+    signInWithPopup,
+    GoogleAuthProvider,
+    signOut,
+} from "firebase/auth";
+
+// Add to your Firebase config:
+const auth = getAuth(app);
+
+function App() {
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            setUser(user);
+        });
+        return unsubscribe;
+    }, []);
+
+    const signInWithGoogle = async () => {
+        const provider = new GoogleAuthProvider();
+        try {
+            await signInWithPopup(auth, provider);
+        } catch (error) {
+            console.error("Error signing in:", error);
+        }
+    };
+
+    const handleSignOut = () => {
+        signOut(auth);
+    };
+
+    return (
+        <div className="app">
+            {user ? (
+                <>
+                    <div className="user-info">
+                        <img
+                            src={user.photoURL}
+                            alt="Profile"
+                            className="profile-pic"
+                        />
+                        <button onClick={handleSignOut}>Sign Out</button>
+                    </div>
+                    <ToDoList db={db} userId={user.uid} />
+                </>
+            ) : (
+                <button onClick={signInWithGoogle}>Sign in with Google</button>
+            )}
+        </div>
+    );
+}
 
 // Imports CSS styles
 import "./App.css";
@@ -10,13 +64,13 @@ import ToDoList from "./ToDoList";
 
 // Firebase configuration object with credentials and project identifiers
 const firebaseConfig = {
-    apiKey: "AIzaSyBBOzhxKc122mUd_wz_KzGPI5i3x7x4LKE",
-    authDomain: "to-do-app-5a99d.firebaseapp.com",
-    projectId: "to-do-app-5a99d",
-    storageBucket: "to-do-app-5a99d.firebasestorage.app",
-    messagingSenderId: "765432115175",
-    appId: "1:765432115175:web:81f091f0ed8972ff411742",
-    measurementId: "G-2PCEMQQ40Q",
+    apiKey: process.env.API_KEY,
+    authDomain: process.env.AUTH_DOMAIN,
+    projectId: process.env.PROJECT_ID,
+    storageBucket: process.env.STORAGE_BUCKET,
+    messagingSenderId: process.env.MESSAGING_SENDER_ID,
+    appId: process.env.APP_ID,
+    measurementId: process.env.MEASUREMENT_ID,
 };
 
 // Initialize the Firebase application using the config object

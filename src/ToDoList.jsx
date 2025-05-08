@@ -8,7 +8,7 @@ import {
     updateDoc,
 } from "firebase/firestore";
 
-function ToDoList({ db }) {
+function ToDoList({ db, userId }) {
     const [tasks, setTasks] = useState(() => {
         const savedTasks = localStorage.getItem("tasks");
         return savedTasks ? JSON.parse(savedTasks) : [];
@@ -20,7 +20,13 @@ function ToDoList({ db }) {
     useEffect(() => {
         const loadTasks = async () => {
             try {
-                const querySnapshot = await getDocs(collection(db, "lists"));
+                const querySnapshot = await getDocs(
+                    query(
+                        collection(db, "lists"),
+                        where("userId", "==", userId)
+                    )
+                );
+
                 const firestoreTasks = {};
                 const localTasks =
                     JSON.parse(localStorage.getItem("tasks")) || [];
@@ -73,8 +79,9 @@ function ToDoList({ db }) {
             // Add to Firestore with order
             const docRef = await addDoc(collection(db, "lists"), {
                 name: taskName,
-                order: tasks.length, // New items get highest order
+                order: tasks.length,
                 createdAt: new Date(),
+                userId: userId, // Add this line
             });
 
             // Update state
@@ -131,9 +138,11 @@ function ToDoList({ db }) {
                 const batchUpdates = [
                     updateDoc(doc(db, "lists", firestoreData[task1].id), {
                         order: firestoreData[task2].order,
+                        userId: userId, // Add this to maintain consistency
                     }),
                     updateDoc(doc(db, "lists", firestoreData[task2].id), {
                         order: firestoreData[task1].order,
+                        userId: userId, // Add this to maintain consistency
                     }),
                 ];
                 await Promise.all(batchUpdates);
@@ -162,7 +171,7 @@ function ToDoList({ db }) {
     return (
         <div className="to-do-list">
             <h1>To Do</h1>
-            <div className="version">Ver. 2.4</div>
+            <div className="version">Ver. 2.6</div>
             <form onSubmit={addTask} className="input-container">
                 <input
                     type="text"
