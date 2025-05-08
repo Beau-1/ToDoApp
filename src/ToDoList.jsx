@@ -1,91 +1,122 @@
 import React, { useState, useEffect } from "react";
-import { addDoc, collection } from "firebase/firestore";
+import {
+    addDoc,
+    collection,
+    getDocs,
+    deleteDoc,
+    doc,
+} from "firebase/firestore";
 
-// Main ToDoList component
 function ToDoList({ db }) {
     const [tasks, setTasks] = useState(() => {
         const savedTasks = localStorage.getItem("tasks");
         return savedTasks ? JSON.parse(savedTasks) : [];
     });
-
-    // State for holding the new task input value
     const [newTask, setNewTask] = useState("");
+    const [firestoreIds, setFirestoreIds] = useState({}); // Stores Firestore document IDs
 
-    // Effect to update localStorage whenever tasks change
+    // Load tasks from Firestore on component mount
+    useEffect(() => {
+        const fetchTasks = async () => {
+            const querySnapshot = await getDocs(collection(db, "lists"));
+            const firestoreTasks = [];
+            const ids = {};
+
+            querySnapshot.forEach((doc) => {
+                firestoreTasks.push(doc.data().name);
+                ids[doc.data().name] = doc.id; // Store doc id by task name
+            });
+
+            // Merge with local storage tasks, avoiding duplicates
+            const localTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+            const mergedTasks = [
+                ...new Set([...localTasks, ...firestoreTasks]),
+            ];
+
+            setTasks(mergedTasks);
+            setFirestoreIds(ids);
+        };
+        fetchTasks();
+    }, [db]);
+
+    // Update localStorage whenever tasks change
     useEffect(() => {
         localStorage.setItem("tasks", JSON.stringify(tasks));
     }, [tasks]);
 
-    // Handler to update newTask state as the user types
-    function handleInputChange(event) {
+    const handleInputChange = (event) => {
         setNewTask(event.target.value);
-    }
+    };
 
-    // Function to add a new document to the 'lists' collection
-    async function addExampleItem() {
-        try {
-            const docRef = await addDoc(collection(db, "lists"), {
-                first: "Ada",
-                last: "Lovelace",
-                born: 1815,
-            });
-            console.log("Document written with ID: ", docRef.id);
-        } catch (e) {
-            console.error("Error adding document: ", e);
-        }
-    }
-
-    // Handler to add a new task to the list
-    function addTask(event) {
-        // Prevents a blank submission
+    const addTask = async (event) => {
         event.preventDefault();
         if (newTask.trim() !== "") {
-            // Add new task to the list
-            setTasks((t) => [...t, newTask]);
-            // Clears the input field
-            setNewTask("");
+            try {
+                // Add to Firestore
+                const docRef = await addDoc(collection(db, "lists"), {
+                    name: newTask,
+                    createdAt: new Date(),
+                });
 
-            // If the input is "example", add the example item to Firestore
-            if (newTask.toLowerCase() === "example") {
-                addExampleItem();
+                // Update Firestore IDs
+                setFirestoreIds((prev) => ({
+                    ...prev,
+                    [newTask]: docRef.id,
+                }));
+
+                // Update local state
+                setTasks([...tasks, newTask]);
+                setNewTask("");
+            } catch (e) {
+                console.error("Error adding document: ", e);
             }
         }
-    }
+    };
 
-    // Handler to delete a task by index
-    function deleteTask(index) {
-        // Removes task
-        const updatedTasks = tasks.filter((_, i) => i !== index);
-        setTasks(updatedTasks);
-    }
+    const deleteTask = async (index) => {
+        const taskToDelete = tasks[index];
 
-    // Handler to move a task up in the list
-    function moveTaskUp(index) {
+        try {
+            // Delete from Firestore if exists
+            if (firestoreIds[taskToDelete]) {
+                await deleteDoc(doc(db, "lists", firestoreIds[taskToDelete]));
+            }
+
+            // Update local state
+            const updatedTasks = tasks.filter((_, i) => i !== index);
+            setTasks(updatedTasks);
+
+            // Update Firestore IDs
+            const newIds = { ...firestoreIds };
+            delete newIds[taskToDelete];
+            setFirestoreIds(newIds);
+        } catch (e) {
+            console.error("Error deleting document: ", e);
+        }
+    };
+
+    const moveTaskUp = (index) => {
         if (index > 0) {
             const updatedTasks = [...tasks];
-            // Swaps the current task with the one above it
             [updatedTasks[index], updatedTasks[index - 1]] = [
                 updatedTasks[index - 1],
                 updatedTasks[index],
             ];
             setTasks(updatedTasks);
         }
-    }
+    };
 
-    // Handler to move a task down in the list
-    function moveTaskDown(index) {
+    const moveTaskDown = (index) => {
         if (index < tasks.length - 1) {
             const updatedTasks = [...tasks];
-            // Swaps the current task with the one below it
             [updatedTasks[index], updatedTasks[index + 1]] = [
                 updatedTasks[index + 1],
                 updatedTasks[index],
             ];
             setTasks(updatedTasks);
         }
-    }
+    };
 
-    // Renders the UI
     return (
         <div className="to-do-list">
             <h1>To Do</h1>
@@ -93,7 +124,7 @@ function ToDoList({ db }) {
             <form onSubmit={addTask} className="input-container">
                 <input
                     type="text"
-                    placeholder="Enter a task (type 'example' for Firestore demo)"
+                    placeholder="Enter a task"
                     value={newTask}
                     onChange={handleInputChange}
                 />
