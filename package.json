@@ -1,38 +1,27 @@
 {
-  "name": "todoapp.jsx",
-  "homepage": "https://beau-1.github.io/ToDoApp/dist/",
-  "private": true,
+  "name": "todoapp",
   "version": "0.0.0",
-  "type": "module",
+  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:ghpages": "vite build --base=https://beau-1.github.io/ToDoApp/dist/",
-    "lint": "eslint .",
     "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "firebase": "^10.7.0",
-    "gh-pages": "^6.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.17",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
     "@vitejs/plugin-react": "^4.2.1",
-    "globals": "^16.0.0",
     "typescript": "^5.3.3",
-    "vite": "^5.1.0",
-    "vite-plugin-checker": "^0.8.1"
+    "vite": "^5.1.4",
+    "vite-plugin-checker": "^0.6.8"
   },
-  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
-  "main": "vite.config.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
