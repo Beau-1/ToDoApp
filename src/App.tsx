@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, JSX } from "react";
 import { auth, db, type User } from "./firebase";
 import { signOut } from "firebase/auth";
 import ToDoList from "./ToDoList";
 import Login from "./Login";
 import "./App.css";
+import React from "react";
 
 function App(): JSX.Element {
     const [user, setUser] = useState<User | null>(null);
