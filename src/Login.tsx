@@ -21,15 +21,13 @@ function Login({ auth }: LoginProps): JSX.Element {
         <div className="login-container">
             <div className="login-box">
                 <h1>To Do</h1>
-                <p>
-                    <button onClick={signInWithGoogle} className="google-btn">
-                        <img
-                            src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
-                            alt="Google logo"
-                        />
-                        Sign in with Google
-                    </button>
-                </p>
+                <button onClick={signInWithGoogle} className="google-btn">
+                    <img
+                        src="https://developers.google.com/identity/images/btn_google_signin_light_normal_web.png"
+                        alt="Sign in with Google"
+                        style={{ height: "40px" }}
+                    />
+                </button>
             </div>
         </div>
     );
