@@ -30,7 +30,7 @@ function App(): JSX.Element {
                             alt="Profile"
                             referrerPolicy="no-referrer"
                         />
-                        <span>{user.displayName}</span>
+
                         <button
                             onClick={() => signOut(auth)}
                             className="sign-out-btn">
