@@ -8,6 +8,11 @@ body {
     text-align: center;
     margin-top: 70px;
     margin-bottom: 70px;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    box-sizing: border-box;
 }
 h1 {
     font-size: 4rem;
@@ -58,6 +63,9 @@ input[type="text"] {
     display: flex;
     max-width: 570px;
     width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
 }
 .text {
     max-width: 100%;
