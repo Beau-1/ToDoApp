@@ -37,3 +37,6 @@
 .google-btn {
     background-color: black;
 }
+.move-button:disabled {
+    visibility: hidden;
+}
