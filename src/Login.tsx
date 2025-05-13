@@ -1,6 +1,6 @@
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { type Auth } from "firebase/auth";
-import "./App.css";
+import "./index.css";
 import React, { JSX } from "react";
 
 interface LoginProps {

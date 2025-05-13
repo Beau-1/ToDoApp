@@ -3,7 +3,7 @@ import { auth, db, type User } from "./firebase";
 import { signOut } from "firebase/auth";
 import ToDoList from "./ToDoList";
 import Login from "./Login";
-import "./App.css";
+import "./index.css";
 import React from "react";
 
 function App(): JSX.Element {
