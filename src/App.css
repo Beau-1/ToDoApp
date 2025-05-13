@@ -39,4 +39,6 @@
 }
 .move-button:disabled {
     visibility: hidden;
+    outline: none;
+    box-shadow: none;
 }
