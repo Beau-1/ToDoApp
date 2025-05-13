@@ -10,13 +10,13 @@ import {
     where,
     type Firestore,
 } from "firebase/firestore";
-// import "./ToDoList.css";
 import React from "react";
 
 interface Task {
     id: string;
     text: string;
     completed: boolean;
+    isDeleting?: boolean;
 }
 
 interface ToDoListProps {
@@ -27,8 +27,8 @@ interface ToDoListProps {
 function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [newTask, setNewTask] = useState("");
+    const [isAdding, setIsAdding] = useState(false);
 
-    // Load tasks from Firestore
     useEffect(() => {
         const fetchTasks = async () => {
             const q = query(
@@ -46,10 +46,11 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         if (userId) fetchTasks();
     }, [db, userId]);
 
-    // Add new task
     const addTask = async (e: FormEvent) => {
         e.preventDefault();
         if (!newTask.trim()) return;
+
+        setIsAdding(true);
 
         try {
             const docRef = await addDoc(collection(db, "tasks"), {
@@ -59,26 +60,36 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                 createdAt: new Date(),
             });
             setTasks([
-                ...tasks,
                 { id: docRef.id, text: newTask, completed: false },
+                ...tasks,
             ]);
             setNewTask("");
         } catch (error) {
             console.error("Error adding task:", error);
+        } finally {
+            setIsAdding(false);
         }
     };
 
-    // Delete task
     const deleteTask = async (id: string) => {
+        setTasks((prev) =>
+            prev.map((task) =>
+                task.id === id ? { ...task, isDeleting: true } : task
+            )
+        );
         try {
             await deleteDoc(doc(db, "tasks", id));
-            setTasks(tasks.filter((task) => task.id !== id));
+            setTasks((prev) => prev.filter((task) => task.id !== id));
         } catch (error) {
             console.error("Error deleting task:", error);
+            setTasks((prev) =>
+                prev.map((task) =>
+                    task.id === id ? { ...task, isDeleting: false } : task
+                )
+            );
         }
     };
 
-    // Toggle task completion
     const toggleComplete = async (id: string) => {
         try {
             const task = tasks.find((t) => t.id === id);
@@ -97,7 +108,6 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         }
     };
 
-    // Move task up
     const moveTaskUp = (index: number) => {
         if (index <= 0) return;
         const newTasks = [...tasks];
@@ -108,7 +118,6 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         setTasks(newTasks);
     };
 
-    // Move task down
     const moveTaskDown = (index: number) => {
         if (index >= tasks.length - 1) return;
         const newTasks = [...tasks];
@@ -123,18 +132,27 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         <div className="to-do-list">
             <h1>To Do</h1>
             <div className="version">Ver. 3.3</div>
+
             <form onSubmit={addTask} className="input-container">
                 <input
                     type="text"
                     placeholder="Enter a task"
                     value={newTask}
                     onChange={(e) => setNewTask(e.target.value)}
-                    maxLength={140}
+                    maxLength={100}
                 />
-                <button type="submit" className="add-button">
-                    Add
+                <button
+                    type="submit"
+                    className="add-button"
+                    disabled={isAdding}>
+                    {isAdding ? (
+                        <span className="button-spinner"></span>
+                    ) : (
+                        "Add"
+                    )}
                 </button>
             </form>
+
             <div className="list">
                 {tasks.map((task, index) => (
                     <div
@@ -162,8 +180,13 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                             </button>
                             <button
                                 className="delete-button"
-                                onClick={() => deleteTask(task.id)}>
-                                ❌
+                                onClick={() => deleteTask(task.id)}
+                                disabled={task.isDeleting}>
+                                {task.isDeleting ? (
+                                    <span className="button-spinner"></span>
+                                ) : (
+                                    "❌"
+                                )}
                             </button>
                         </div>
                     </div>
