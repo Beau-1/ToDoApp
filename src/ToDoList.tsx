@@ -129,6 +129,7 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                     placeholder="Enter a task"
                     value={newTask}
                     onChange={(e) => setNewTask(e.target.value)}
+                    maxLength={140}
                 />
                 <button type="submit" className="add-button">
                     Add
