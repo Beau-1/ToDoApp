@@ -59,7 +59,6 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                 userId,
                 createdAt: new Date(),
             });
-            // ✅ Add new task to the bottom of the list
             setTasks([
                 ...tasks,
                 { id: docRef.id, text: newTask, completed: false },
@@ -83,11 +82,6 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
             setTasks((prev) => prev.filter((task) => task.id !== id));
         } catch (error) {
             console.error("Error deleting task:", error);
-            setTasks((prev) =>
-                prev.map((task) =>
-                    task.id === id ? { ...task, isDeleting: false } : task
-                )
-            );
         }
     };
 
@@ -130,9 +124,11 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
     };
 
     return (
-        <div className="to-do-list">
-            <h1>To Do</h1>
-            <div className="version">Ver. 3.4</div>
+        <main className="to-do-list">
+            <header>
+                <h1>To Do</h1>
+                <div className="version">Ver. 3.5</div>
+            </header>
 
             <form onSubmit={addTask} className="input-container">
                 <input
@@ -154,9 +150,9 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                 </button>
             </form>
 
-            <div className="list">
+            <section className="list">
                 {tasks.map((task, index) => (
-                    <div
+                    <article
                         key={task.id}
                         className={`list-item ${
                             task.completed ? "completed" : ""
@@ -170,19 +166,22 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                             <button
                                 className="move-button"
                                 onClick={() => moveTaskUp(index)}
-                                disabled={index === 0}>
+                                disabled={index === 0}
+                                aria-label="Move task up">
                                 🔼
                             </button>
                             <button
                                 className="move-button"
                                 onClick={() => moveTaskDown(index)}
-                                disabled={index === tasks.length - 1}>
+                                disabled={index === tasks.length - 1}
+                                aria-label="Move task down">
                                 🔽
                             </button>
                             <button
                                 className="delete-button"
                                 onClick={() => deleteTask(task.id)}
-                                disabled={task.isDeleting}>
+                                disabled={task.isDeleting}
+                                aria-label="Delete task">
                                 {task.isDeleting ? (
                                     <span className="button-spinner"></span>
                                 ) : (
@@ -190,10 +189,10 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                                 )}
                             </button>
                         </div>
-                    </div>
+                    </article>
                 ))}
-            </div>
-        </div>
+            </section>
+        </main>
     );
 }
 
