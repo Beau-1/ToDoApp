@@ -185,28 +185,3 @@ input[type="text"] {
         transform: rotate(360deg);
     }
 }
-.error-banner {
-    background-color: #ffdddd;
-    color: #b30000;
-    border: 1px solid #f5c6cb;
-    padding: 10px 15px;
-    margin-top: 20px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 570px;
-    width: 100%;
-    box-sizing: border-box;
-    font-size: 0.95rem;
-}
-
-.error-banner button {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: #b30000;
-    padding: 0;
-}

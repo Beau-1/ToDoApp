@@ -8,14 +8,17 @@ import {
     updateDoc,
     query,
     where,
+    orderBy,
     type Firestore,
 } from "firebase/firestore";
+import { toast } from "react-toastify";
 import React from "react";
 
 interface Task {
     id: string;
     text: string;
     completed: boolean;
+    position: number;
     isDeleting?: boolean;
 }
 
@@ -31,19 +34,28 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
 
     useEffect(() => {
         const fetchTasks = async () => {
-            const q = query(
-                collection(db, "tasks"),
-                where("userId", "==", userId)
-            );
-            const querySnapshot = await getDocs(q);
-            const tasksData = querySnapshot.docs.map((doc) => ({
-                id: doc.id,
-                text: doc.data().text,
-                completed: doc.data().completed || false,
-            }));
-            setTasks(tasksData);
+            if (!userId) return;
+            try {
+                const q = query(
+                    collection(db, "tasks"),
+                    where("userId", "==", userId),
+                    orderBy("position", "asc")
+                );
+                const snapshot = await getDocs(q);
+                const tasksData = snapshot.docs.map((doc, index) => ({
+                    id: doc.id,
+                    text: doc.data().text,
+                    completed: doc.data().completed || false,
+                    position: doc.data().position ?? index,
+                }));
+                setTasks(tasksData);
+            } catch (error) {
+                console.error("Error loading tasks:", error);
+                toast.error("Failed to load tasks.");
+            }
         };
-        if (userId) fetchTasks();
+
+        fetchTasks();
     }, [db, userId]);
 
     const addTask = async (e: FormEvent) => {
@@ -53,19 +65,27 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         setIsAdding(true);
 
         try {
+            const newPosition = tasks.length;
             const docRef = await addDoc(collection(db, "tasks"), {
                 text: newTask,
                 completed: false,
                 userId,
                 createdAt: new Date(),
+                position: newPosition,
             });
             setTasks([
                 ...tasks,
-                { id: docRef.id, text: newTask, completed: false },
+                {
+                    id: docRef.id,
+                    text: newTask,
+                    completed: false,
+                    position: newPosition,
+                },
             ]);
             setNewTask("");
         } catch (error) {
             console.error("Error adding task:", error);
+            toast.error("Failed to add task.");
         } finally {
             setIsAdding(false);
         }
@@ -77,11 +97,19 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                 task.id === id ? { ...task, isDeleting: true } : task
             )
         );
+
         try {
             await deleteDoc(doc(db, "tasks", id));
-            setTasks((prev) => prev.filter((task) => task.id !== id));
+            const newTasks = tasks.filter((task) => task.id !== id);
+            await syncPositions(newTasks);
         } catch (error) {
             console.error("Error deleting task:", error);
+            toast.error("Failed to delete task.");
+            setTasks((prev) =>
+                prev.map((task) =>
+                    task.id === id ? { ...task, isDeleting: false } : task
+                )
+            );
         }
     };
 
@@ -100,34 +128,50 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
             );
         } catch (error) {
             console.error("Error updating task:", error);
+            toast.error("Failed to update task.");
         }
     };
 
-    const moveTaskUp = (index: number) => {
+    const syncPositions = async (newTasks: Task[]) => {
+        try {
+            const updates = newTasks.map((task, index) =>
+                updateDoc(doc(db, "tasks", task.id), { position: index })
+            );
+            await Promise.all(updates);
+            setTasks(
+                newTasks.map((task, index) => ({ ...task, position: index }))
+            );
+        } catch (error) {
+            console.error("Error syncing task order:", error);
+            toast.error("Failed to reorder tasks.");
+        }
+    };
+
+    const moveTaskUp = async (index: number) => {
         if (index <= 0) return;
         const newTasks = [...tasks];
         [newTasks[index], newTasks[index - 1]] = [
             newTasks[index - 1],
             newTasks[index],
         ];
-        setTasks(newTasks);
+        await syncPositions(newTasks);
     };
 
-    const moveTaskDown = (index: number) => {
+    const moveTaskDown = async (index: number) => {
         if (index >= tasks.length - 1) return;
         const newTasks = [...tasks];
         [newTasks[index], newTasks[index + 1]] = [
             newTasks[index + 1],
             newTasks[index],
         ];
-        setTasks(newTasks);
+        await syncPositions(newTasks);
     };
 
     return (
         <main className="to-do-list">
             <header>
                 <h1>To Do</h1>
-                <div className="version">Ver. 3.5</div>
+                <div className="version">Ver. 3.6</div>
             </header>
 
             <form onSubmit={addTask} className="input-container">
@@ -151,46 +195,50 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
             </form>
 
             <section className="list">
-                {tasks.map((task, index) => (
-                    <article
-                        key={task.id}
-                        className={`list-item ${
-                            task.completed ? "completed" : ""
-                        }`}>
-                        <span
-                            className="text"
-                            onClick={() => toggleComplete(task.id)}>
-                            {task.text}
-                        </span>
-                        <div className="task-actions">
-                            <button
-                                className="move-button"
-                                onClick={() => moveTaskUp(index)}
-                                disabled={index === 0}
-                                aria-label="Move task up">
-                                🔼
-                            </button>
-                            <button
-                                className="move-button"
-                                onClick={() => moveTaskDown(index)}
-                                disabled={index === tasks.length - 1}
-                                aria-label="Move task down">
-                                🔽
-                            </button>
-                            <button
-                                className="delete-button"
-                                onClick={() => deleteTask(task.id)}
-                                disabled={task.isDeleting}
-                                aria-label="Delete task">
-                                {task.isDeleting ? (
-                                    <span className="button-spinner"></span>
-                                ) : (
-                                    "❌"
-                                )}
-                            </button>
-                        </div>
-                    </article>
-                ))}
+                {tasks.length === 0 ? (
+                    <p className="empty-message"></p>
+                ) : (
+                    tasks.map((task, index) => (
+                        <article
+                            key={task.id}
+                            className={`list-item ${
+                                task.completed ? "completed" : ""
+                            }`}>
+                            <span
+                                className="text"
+                                onClick={() => toggleComplete(task.id)}>
+                                {task.text}
+                            </span>
+                            <div className="task-actions">
+                                <button
+                                    className="move-button"
+                                    onClick={() => moveTaskUp(index)}
+                                    disabled={index === 0}
+                                    aria-label="Move task up">
+                                    🔼
+                                </button>
+                                <button
+                                    className="move-button"
+                                    onClick={() => moveTaskDown(index)}
+                                    disabled={index === tasks.length - 1}
+                                    aria-label="Move task down">
+                                    🔽
+                                </button>
+                                <button
+                                    className="delete-button"
+                                    onClick={() => deleteTask(task.id)}
+                                    disabled={task.isDeleting}
+                                    aria-label="Delete task">
+                                    {task.isDeleting ? (
+                                        <span className="button-spinner"></span>
+                                    ) : (
+                                        "❌"
+                                    )}
+                                </button>
+                            </div>
+                        </article>
+                    ))
+                )}
             </section>
         </main>
     );
