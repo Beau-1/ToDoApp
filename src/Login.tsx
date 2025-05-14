@@ -28,7 +28,7 @@ function Login({ auth }: LoginProps): JSX.Element {
                 <br />
 
                 <h1>To Do</h1>
-                <div className="version">Ver. 3.8</div>
+                <div className="version">Ver. 3.5</div>
             </header>
 
             <section className="login-container">

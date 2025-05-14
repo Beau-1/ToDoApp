@@ -8,7 +8,6 @@ import {
     updateDoc,
     query,
     where,
-    orderBy,
     type Firestore,
 } from "firebase/firestore";
 import React from "react";
@@ -17,7 +16,6 @@ interface Task {
     id: string;
     text: string;
     completed: boolean;
-    position: number;
     isDeleting?: boolean;
 }
 
@@ -30,30 +28,21 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [newTask, setNewTask] = useState("");
     const [isAdding, setIsAdding] = useState(false);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchTasks = async () => {
-            try {
-                const q = query(
-                    collection(db, "tasks"),
-                    where("userId", "==", userId),
-                    orderBy("position")
-                );
-                const querySnapshot = await getDocs(q);
-                const tasksData = querySnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    text: doc.data().text,
-                    completed: doc.data().completed || false,
-                    position: doc.data().position ?? 0,
-                }));
-                setTasks(tasksData);
-            } catch (error) {
-                console.error("Error fetching tasks:", error);
-                setErrorMessage("Failed to load tasks.");
-            }
+            const q = query(
+                collection(db, "tasks"),
+                where("userId", "==", userId)
+            );
+            const querySnapshot = await getDocs(q);
+            const tasksData = querySnapshot.docs.map((doc) => ({
+                id: doc.id,
+                text: doc.data().text,
+                completed: doc.data().completed || false,
+            }));
+            setTasks(tasksData);
         };
-
         if (userId) fetchTasks();
     }, [db, userId]);
 
@@ -64,27 +53,19 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         setIsAdding(true);
 
         try {
-            const newPosition = tasks.length;
             const docRef = await addDoc(collection(db, "tasks"), {
                 text: newTask,
                 completed: false,
                 userId,
                 createdAt: new Date(),
-                position: newPosition,
             });
             setTasks([
                 ...tasks,
-                {
-                    id: docRef.id,
-                    text: newTask,
-                    completed: false,
-                    position: newPosition,
-                },
+                { id: docRef.id, text: newTask, completed: false },
             ]);
             setNewTask("");
         } catch (error) {
             console.error("Error adding task:", error);
-            setErrorMessage("Failed to add task. Please try again.");
         } finally {
             setIsAdding(false);
         }
@@ -98,11 +79,9 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         );
         try {
             await deleteDoc(doc(db, "tasks", id));
-            const newTasks = tasks.filter((task) => task.id !== id);
-            await syncPositions(newTasks);
+            setTasks((prev) => prev.filter((task) => task.id !== id));
         } catch (error) {
             console.error("Error deleting task:", error);
-            setErrorMessage("Failed to delete task.");
         }
     };
 
@@ -121,58 +100,34 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
             );
         } catch (error) {
             console.error("Error updating task:", error);
-            setErrorMessage("Failed to update task.");
         }
     };
 
-    const syncPositions = async (newTasks: Task[]) => {
-        try {
-            const batch = newTasks.map((task, index) =>
-                updateDoc(doc(db, "tasks", task.id), { position: index })
-            );
-            await Promise.all(batch);
-            setTasks(
-                newTasks.map((task, index) => ({ ...task, position: index }))
-            );
-        } catch (error) {
-            console.error("Error syncing positions:", error);
-            setErrorMessage("Failed to update task order.");
-        }
-    };
-
-    const moveTaskUp = async (index: number) => {
+    const moveTaskUp = (index: number) => {
         if (index <= 0) return;
         const newTasks = [...tasks];
         [newTasks[index], newTasks[index - 1]] = [
             newTasks[index - 1],
             newTasks[index],
         ];
-        await syncPositions(newTasks);
+        setTasks(newTasks);
     };
 
-    const moveTaskDown = async (index: number) => {
+    const moveTaskDown = (index: number) => {
         if (index >= tasks.length - 1) return;
         const newTasks = [...tasks];
         [newTasks[index], newTasks[index + 1]] = [
             newTasks[index + 1],
             newTasks[index],
         ];
-        await syncPositions(newTasks);
+        setTasks(newTasks);
     };
-
-    // Auto-clear error after 5 seconds
-    useEffect(() => {
-        if (errorMessage) {
-            const timer = setTimeout(() => setErrorMessage(null), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [errorMessage]);
 
     return (
         <main className="to-do-list">
             <header>
                 <h1>To Do</h1>
-                <div className="version">Ver. 3.8</div>
+                <div className="version">Ver. 3.5</div>
             </header>
 
             <form onSubmit={addTask} className="input-container">
@@ -237,17 +192,6 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                     </article>
                 ))}
             </section>
-
-            {errorMessage && (
-                <div className="error-banner">
-                    {errorMessage}
-                    <button
-                        onClick={() => setErrorMessage(null)}
-                        aria-label="Close error">
-                        ❌
-                    </button>
-                </div>
-            )}
         </main>
     );
 }
