@@ -59,9 +59,10 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                 userId,
                 createdAt: new Date(),
             });
+            // ✅ Add new task to the bottom of the list
             setTasks([
-                { id: docRef.id, text: newTask, completed: false },
                 ...tasks,
+                { id: docRef.id, text: newTask, completed: false },
             ]);
             setNewTask("");
         } catch (error) {
@@ -131,7 +132,7 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
     return (
         <div className="to-do-list">
             <h1>To Do</h1>
-            <div className="version">Ver. 3.3</div>
+            <div className="version">Ver. 3.4</div>
 
             <form onSubmit={addTask} className="input-container">
                 <input
