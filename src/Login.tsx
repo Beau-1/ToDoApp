@@ -1,7 +1,7 @@
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { type Auth } from "firebase/auth";
 import "./index.css";
-import React, { JSX } from "react";
+import React from "react";
 
 interface LoginProps {
     auth: Auth;
@@ -18,9 +18,24 @@ function Login({ auth }: LoginProps): JSX.Element {
     };
 
     return (
-        <div className="login-container">
-            <div className="login-box">
-                <h1>To Do</h1>
+        <main className="to-do-list">
+            <header>
+                <br />
+                <br />
+                <br />
+                <br />
+                <br />
+                <br />
+
+                <h1>ToDo</h1>
+                <div className="version">Ver. 3.5</div>
+            </header>
+
+            <section className="login-container">
+                <p className="intro-text">
+                    A way to organize your tasks.
+                    <br />
+                </p>
                 <button onClick={signInWithGoogle} className="google-btn">
                     <img
                         src="https://developers.google.com/identity/images/btn_google_signin_light_normal_web.png"
@@ -28,8 +43,8 @@ function Login({ auth }: LoginProps): JSX.Element {
                         style={{ height: "40px" }}
                     />
                 </button>
-            </div>
-        </div>
+            </section>
+        </main>
     );
 }
 
