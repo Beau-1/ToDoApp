@@ -27,7 +27,7 @@ function Login({ auth }: LoginProps): JSX.Element {
                 <br />
                 <br />
 
-                <h1>ToDo</h1>
+                <h1>To Do</h1>
                 <div className="version">Ver. 3.5</div>
             </header>
 
