@@ -73,54 +73,54 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         fetchTasks();
     }, [db, userId]);
 
-    const addTask = async (e: FormEvent) => {
+    const addTask = (e: FormEvent) => {
         e.preventDefault();
         if (!newTask.trim()) return;
 
-        setIsAdding(true);
+        const tempId = `temp-${Date.now()}`;
+        const newPosition = tasks.length;
 
-        try {
-            const newPosition = tasks.length;
-            const docRef = await addDoc(collection(db, "tasks"), {
-                text: newTask,
-                completed: false,
-                userId,
-                createdAt: new Date(),
-                position: newPosition,
+        const optimisticTask = {
+            id: tempId,
+            text: newTask,
+            completed: false,
+            position: newPosition,
+        };
+
+        setTasks((prev) => [...prev, optimisticTask]);
+        setNewTask("");
+
+        addDoc(collection(db, "tasks"), {
+            text: optimisticTask.text,
+            completed: false,
+            userId,
+            createdAt: new Date(),
+            position: newPosition,
+        })
+            .then((docRef) => {
+                setTasks((prev) =>
+                    prev.map((task) =>
+                        task.id === tempId ? { ...task, id: docRef.id } : task
+                    )
+                );
+            })
+            .catch((error) => {
+                console.error("Error adding task:", error);
+                toast.error("Failed to add task.");
+                setTasks((prev) => prev.filter((task) => task.id !== tempId));
             });
-            setTasks([
-                ...tasks,
-                {
-                    id: docRef.id,
-                    text: newTask,
-                    completed: false,
-                    position: newPosition,
-                },
-            ]);
-            setNewTask("");
-        } catch (error) {
-            console.error("Error adding task:", error);
-            toast.error("Failed to add task.");
-        } finally {
-            setIsAdding(false);
-        }
     };
 
-    const deleteTask = async (id: string) => {
-        setTasks((prev) =>
-            prev.map((task) =>
-                task.id === id ? { ...task, isDeleting: true } : task
-            )
-        );
+    const deleteTask = (id: string) => {
+        const newTasks = tasks.filter((task) => task.id !== id);
+        setTasks(newTasks); // ✅ Optimistic UI update
 
-        try {
-            await deleteDoc(doc(db, "tasks", id));
-            const newTasks = tasks.filter((task) => task.id !== id);
-            await syncPositions(newTasks);
-        } catch (error) {
-            console.error("Error deleting task:", error);
-            toast.error("Failed to delete task.");
-        }
+        deleteDoc(doc(db, "tasks", id))
+            .then(() => syncPositions(newTasks))
+            .catch((error) => {
+                console.error("Error deleting task:", error);
+                toast.error("Failed to delete task.");
+            });
     };
 
     const toggleComplete = async (id: string) => {
