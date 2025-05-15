@@ -1,4 +1,4 @@
-import { useState, useEffect, JSX, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import {
     addDoc,
     collection,
@@ -12,7 +12,22 @@ import {
     type Firestore,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import React from "react";
+
+import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    TouchSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    verticalListSortingStrategy,
+    useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Task {
     id: string;
@@ -105,11 +120,6 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         } catch (error) {
             console.error("Error deleting task:", error);
             toast.error("Failed to delete task.");
-            setTasks((prev) =>
-                prev.map((task) =>
-                    task.id === id ? { ...task, isDeleting: false } : task
-                )
-            );
         }
     };
 
@@ -147,31 +157,30 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         }
     };
 
-    const moveTaskUp = async (index: number) => {
-        if (index <= 0) return;
-        const newTasks = [...tasks];
-        [newTasks[index], newTasks[index - 1]] = [
-            newTasks[index - 1],
-            newTasks[index],
-        ];
-        await syncPositions(newTasks);
-    };
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(TouchSensor)
+    );
 
-    const moveTaskDown = async (index: number) => {
-        if (index >= tasks.length - 1) return;
-        const newTasks = [...tasks];
-        [newTasks[index], newTasks[index + 1]] = [
-            newTasks[index + 1],
-            newTasks[index],
-        ];
-        await syncPositions(newTasks);
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = tasks.findIndex((t) => t.id === active.id);
+        const newIndex = tasks.findIndex((t) => t.id === over.id);
+
+        const reorderedTasks = [...tasks];
+        const [movedTask] = reorderedTasks.splice(oldIndex, 1);
+        reorderedTasks.splice(newIndex, 0, movedTask);
+
+        await syncPositions(reorderedTasks);
     };
 
     return (
         <main className="to-do-list">
             <header>
                 <h1>To Do</h1>
-                <div className="version">Ver. 3.7</div>
+                <div className="version">Ver. 4.1</div>
             </header>
 
             <form onSubmit={addTask} className="input-container">
@@ -194,54 +203,82 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                 </button>
             </form>
 
-            <section className="list">
-                {tasks.length === 0 ? (
-                    <p className="empty-message"></p>
-                ) : (
-                    tasks.map((task, index) => (
-                        <article
-                            key={task.id}
-                            className={`list-item ${
-                                task.completed ? "completed" : ""
-                            }`}>
-                            <span
-                                className="text"
-                                onClick={() => toggleComplete(task.id)}>
-                                {task.text}
-                            </span>
-                            <div className="task-actions">
-                                <button
-                                    className="move-button"
-                                    onClick={() => moveTaskUp(index)}
-                                    disabled={index === 0}
-                                    aria-label="Move task up">
-                                    🔼
-                                </button>
-                                <button
-                                    className="move-button"
-                                    onClick={() => moveTaskDown(index)}
-                                    disabled={index === tasks.length - 1}
-                                    aria-label="Move task down">
-                                    🔽
-                                </button>
-                                <button
-                                    className="delete-button"
-                                    onClick={() => deleteTask(task.id)}
-                                    disabled={task.isDeleting}
-                                    aria-label="Delete task">
-                                    {task.isDeleting ? (
-                                        <span className="button-spinner"></span>
-                                    ) : (
-                                        "❌"
-                                    )}
-                                </button>
-                            </div>
-                        </article>
-                    ))
-                )}
-            </section>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}>
+                <SortableContext
+                    items={tasks.map((t) => t.id)}
+                    strategy={verticalListSortingStrategy}>
+                    <section className="list">
+                        {tasks.map((task) => (
+                            <SortableTaskItem
+                                key={task.id}
+                                task={task}
+                                toggleComplete={toggleComplete}
+                                deleteTask={deleteTask}
+                            />
+                        ))}
+                    </section>
+                </SortableContext>
+            </DndContext>
         </main>
     );
 }
 
 export default ToDoList;
+
+interface SortableTaskProps {
+    task: Task;
+    toggleComplete: (id: string) => void;
+    deleteTask: (id: string) => void;
+}
+
+function SortableTaskItem({
+    task,
+    toggleComplete,
+    deleteTask,
+}: SortableTaskProps) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: task.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        cursor: "grab",
+        zIndex: isDragging ? 1 : "auto",
+    };
+
+    return (
+        <article
+            ref={setNodeRef}
+            style={style}
+            className={`list-item ${task.completed ? "completed" : ""} ${
+                isDragging ? "dragging" : ""
+            }`}
+            {...attributes}
+            {...listeners}>
+            <span className="text" onClick={() => toggleComplete(task.id)}>
+                {task.text}
+            </span>
+            <div className="task-actions">
+                <button
+                    className="delete-button"
+                    onClick={() => deleteTask(task.id)}
+                    disabled={task.isDeleting}>
+                    {task.isDeleting ? (
+                        <span className="button-spinner"></span>
+                    ) : (
+                        "❌"
+                    )}
+                </button>
+            </div>
+        </article>
+    );
+}

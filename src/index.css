@@ -57,7 +57,9 @@ input[type="text"] {
     display: flex;
     flex-direction: column;
     align-items: center;
+    min-height: 100px;
     gap: 8px;
+    min-height: 150px;
 }
 
 .list-item {
@@ -71,16 +73,26 @@ input[type="text"] {
     width: 100%;
     box-sizing: border-box;
     overflow-wrap: break-word;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.list-item.dragging {
+    opacity: 1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.02);
+    z-index: 1;
+    background-color: black;
+}
 .text {
     max-width: 100%;
     word-break: break-word;
     flex: 1;
 }
 
-.delete-button,
-.move-button {
+.delete-button {
     padding: 0;
     font-size: 1.4rem;
     background: none;
@@ -204,4 +216,13 @@ input[type="text"] {
     background: none;
     padding: 2px 8px;
     border-radius: 6px;
+}
+.list-item {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.list-item.dragging {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.02);
+    z-index: 1;
 }
