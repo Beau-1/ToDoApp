@@ -218,7 +218,7 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                         {tasks.map((task) => (
                             <CSSTransition
                                 key={task.id}
-                                timeout={300}
+                                timeout={{ enter: 300, exit: 0 }}
                                 classNames={{
                                     enter: "entering",
                                     exit: "exiting",

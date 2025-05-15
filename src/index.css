@@ -234,16 +234,5 @@ input[type="text"] {
 .entering-active {
     opacity: 1;
     transform: translateY(0);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.exiting {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.exiting-active {
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transition: opacity 0.05s ease, transform 0.05s ease;
 }
