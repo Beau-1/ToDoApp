@@ -262,9 +262,11 @@ function SortableTaskItem({
             className={`list-item ${task.completed ? "completed" : ""} ${
                 isDragging ? "dragging" : ""
             }`}
-            {...attributes}
-            {...listeners}>
-            <span className="text" onClick={() => toggleComplete(task.id)}>
+            {...attributes}>
+            <span
+                className="text"
+                {...listeners} // <- drag handle only here!
+                onClick={() => toggleComplete(task.id)}>
                 {task.text}
             </span>
             <div className="task-actions">
