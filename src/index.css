@@ -226,3 +226,24 @@ input[type="text"] {
     transform: scale(1.02);
     z-index: 1;
 }
+.entering {
+    opacity: 0;
+    transform: translateY(-5px);
+}
+
+.entering-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.exiting {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.exiting-active {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
