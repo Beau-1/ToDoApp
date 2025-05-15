@@ -3,8 +3,8 @@ import { auth, db, type User } from "./firebase";
 import { signOut } from "firebase/auth";
 import ToDoList from "./ToDoList";
 import Login from "./Login";
+import WeatherWidget from "./WeatherWidget";
 import "./index.css";
-import React from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -32,13 +32,20 @@ function App(): JSX.Element {
                                 src={user.photoURL || ""}
                                 alt="Profile"
                                 referrerPolicy="no-referrer"
+                                className="profile-pic"
                             />
+
+                            <div className="weather-wrapper">
+                                <WeatherWidget />
+                            </div>
+
                             <button
                                 onClick={() => signOut(auth)}
                                 className="sign-out-btn">
                                 Sign Out
                             </button>
                         </div>
+
                         <ToDoList db={db} userId={user.uid} />
                     </>
                 ) : (
