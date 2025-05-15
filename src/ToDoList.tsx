@@ -148,9 +148,6 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                 updateDoc(doc(db, "tasks", task.id), { position: index })
             );
             await Promise.all(updates);
-            setTasks(
-                newTasks.map((task, index) => ({ ...task, position: index }))
-            );
         } catch (error) {
             console.error("Error syncing task order:", error);
             toast.error("Failed to reorder tasks.");
@@ -162,7 +159,7 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         useSensor(TouchSensor)
     );
 
-    const handleDragEnd = async (event: DragEndEvent) => {
+    const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
@@ -173,14 +170,19 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         const [movedTask] = reorderedTasks.splice(oldIndex, 1);
         reorderedTasks.splice(newIndex, 0, movedTask);
 
-        await syncPositions(reorderedTasks);
+        setTasks(reorderedTasks); // ✅ Optimistic UI update
+
+        syncPositions(reorderedTasks).catch((error) => {
+            console.error("Error syncing task order:", error);
+            toast.error("Failed to reorder tasks.");
+        });
     };
 
     return (
         <main className="to-do-list">
             <header>
                 <h1>To Do</h1>
-                <div className="version">Ver. 4.0</div>
+                <div className="version">Ver. 4.1</div>
             </header>
 
             <form onSubmit={addTask} className="input-container">
@@ -265,7 +267,7 @@ function SortableTaskItem({
             {...attributes}>
             <span
                 className="text"
-                {...listeners} // <- drag handle only here!
+                {...listeners}
                 onClick={() => toggleComplete(task.id)}>
                 {task.text}
             </span>
