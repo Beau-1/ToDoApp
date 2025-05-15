@@ -6,8 +6,9 @@ interface WeatherData {
     icon: string;
 }
 
-function WeatherWidget(): JSX.Element | null {
+function WeatherWidget(): JSX.Element {
     const [weather, setWeather] = useState<WeatherData | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchWeather = async (lat: number, lon: number) => {
@@ -26,6 +27,8 @@ function WeatherWidget(): JSX.Element | null {
             } catch (error) {
                 console.error("Failed to fetch weather:", error);
                 toast.error("Failed to load weather data.");
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -38,20 +41,26 @@ function WeatherWidget(): JSX.Element | null {
                 (error) => {
                     console.error("Geolocation error:", error);
                     toast.error("Location access denied. Weather unavailable.");
+                    setLoading(false);
                 }
             );
         } else {
             console.error("Geolocation not supported.");
             toast.error("Geolocation not supported by this browser.");
+            setLoading(false);
         }
     }, []);
 
-    if (!weather) return null;
-
     return (
         <div className="weather-widget">
-            <img src={weather.icon} alt="Weather" />
-            <span>{weather.temp}°</span>
+            {loading ? (
+                <span className="button-spinner"></span>
+            ) : weather ? (
+                <>
+                    <img src={weather.icon} alt="Weather" />
+                    <span>{weather.temp}°</span>
+                </>
+            ) : null}
         </div>
     );
 }
