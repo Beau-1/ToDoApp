@@ -228,11 +228,21 @@ input[type="text"] {
 }
 .entering {
     opacity: 0;
-    transform: translateY(-5px);
+    transform: scale(0.95);
 }
 
 .entering-active {
     opacity: 1;
+    transform: scale(1);
+    transition: opacity 250ms ease, transform 250ms ease;
+}
+.list-item-enter {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+.list-item-enter-active {
+    opacity: 1;
     transform: translateY(0);
-    transition: opacity 0.05s ease, transform 0.05s ease;
+    transition: opacity 300ms ease, transform 300ms ease;
 }
