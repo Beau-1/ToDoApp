@@ -29,8 +29,6 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import { CSSTransition, TransitionGroup } from "react-transition-group";
-
 interface Task {
     id: string;
     text: string;
@@ -115,7 +113,7 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
 
     const deleteTask = (id: string) => {
         const newTasks = tasks.filter((task) => task.id !== id);
-        setTasks(newTasks); // Optimistic delete
+        setTasks(newTasks); // ✅ Optimistic UI update
 
         deleteDoc(doc(db, "tasks", id))
             .then(() => syncPositions(newTasks))
@@ -172,7 +170,7 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         const [movedTask] = reorderedTasks.splice(oldIndex, 1);
         reorderedTasks.splice(newIndex, 0, movedTask);
 
-        setTasks(reorderedTasks); // Optimistic reorder
+        setTasks(reorderedTasks); // ✅ Optimistic UI update
 
         syncPositions(reorderedTasks).catch((error) => {
             console.error("Error syncing task order:", error);
@@ -184,7 +182,7 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         <main className="to-do-list">
             <header>
                 <h1>To Do</h1>
-                <div className="version">Ver. 4.2</div>
+                <div className="version">Ver. 4.1</div>
             </header>
 
             <form onSubmit={addTask} className="input-container">
@@ -214,23 +212,16 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
                 <SortableContext
                     items={tasks.map((t) => t.id)}
                     strategy={verticalListSortingStrategy}>
-                    <TransitionGroup component="section" className="list">
+                    <section className="list">
                         {tasks.map((task) => (
-                            <CSSTransition
+                            <SortableTaskItem
                                 key={task.id}
-                                timeout={{ enter: 300, exit: 0 }}
-                                classNames={{
-                                    enter: "entering",
-                                    exit: "exiting",
-                                }}>
-                                <SortableTaskItem
-                                    task={task}
-                                    toggleComplete={toggleComplete}
-                                    deleteTask={deleteTask}
-                                />
-                            </CSSTransition>
+                                task={task}
+                                toggleComplete={toggleComplete}
+                                deleteTask={deleteTask}
+                            />
                         ))}
-                    </TransitionGroup>
+                    </section>
                 </SortableContext>
             </DndContext>
         </main>
@@ -283,8 +274,13 @@ function SortableTaskItem({
             <div className="task-actions">
                 <button
                     className="delete-button"
-                    onClick={() => deleteTask(task.id)}>
-                    ❌
+                    onClick={() => deleteTask(task.id)}
+                    disabled={task.isDeleting}>
+                    {task.isDeleting ? (
+                        <span className="button-spinner"></span>
+                    ) : (
+                        "❌"
+                    )}
                 </button>
             </div>
         </article>
