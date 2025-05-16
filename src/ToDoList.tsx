@@ -182,7 +182,7 @@ function ToDoList({ db, userId }: ToDoListProps): JSX.Element {
         <main className="to-do-list">
             <header>
                 <h1>To Do</h1>
-                <div className="version">Ver. 4.1</div>
+                <div className="version">Ver. 4.2</div>
             </header>
 
             <form onSubmit={addTask} className="input-container">
